@@ -15,13 +15,14 @@ abstract class MigrationAdapter {
           ..sort((first, second) =>
               first.startVersion.compareTo(second.startVersion));
 
+    /*
     if (relevantMigrations.isEmpty ||
         relevantMigrations.last.endVersion != endVersion) {
       throw StateError(
         'There is no migration supplied to update the database to the current version.'
         ' Aborting the migration.',
       );
-    }
+    }*/
 
     for (final migration in relevantMigrations) {
       await migration.migrate(migrationDatabase);

@@ -8,5 +8,6 @@ export 'package:floor/src/adapter/update_adapter.dart';
 export 'package:floor/src/callback.dart';
 export 'package:floor/src/database.dart';
 export 'package:floor/src/migration.dart';
+export 'package:floor/src/automigration/auto_migration.dart';
 export 'package:floor/src/sqflite_database_factory.dart';
 export 'package:floor_annotation/floor_annotation.dart';

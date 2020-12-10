@@ -25,8 +25,10 @@ class DatabaseWriter implements Writer {
       ..name = '_\$$databaseName'
       ..extend = refer(databaseName)
       ..methods.add(_generateOpenMethod(database))
+      ..methods.add(_generateAllDaoList(database))
       ..methods.addAll(_generateDaoGetters(database))
       ..fields.addAll(_generateDaoInstances(database))
+      ..fields.addAll(_generateCreateStatements(database))
       ..constructors.add(_generateConstructor()));
   }
 
@@ -74,21 +76,53 @@ class DatabaseWriter implements Writer {
   }
 
   @nonNull
-  Method _generateOpenMethod(final Database database) {
+  Method _generateAllDaoList(final Database database) {
+    final daoNames = database.daoGetters.map((daoGetter) => daoGetter.name).join(', \n');
+
+    return Method((builder) => builder
+      ..annotations.add(overrideAnnotationExpression)
+      ..type = MethodType.getter
+      ..returns = refer('List<dynamic>')
+      ..name = 'allDaos'
+      ..body = Code('return [$daoNames];'));
+  }
+
+  @nonNull
+  List<Field> _generateCreateStatements(final Database database) {
     final createTableStatements =
-        _generateCreateTableSqlStatements(database.entities)
-            .map((statement) => "await database.execute('$statement');")
-            .join('\n');
+    _generateCreateTableSqlStatements(database.entities)
+        .map((statement) => "'$statement',")
+        .join('\n');
+
     final createIndexStatements = database.entities
         .map((entity) => entity.indices.map((index) => index.createQuery()))
         .expand((statements) => statements)
-        .map((statement) => "await database.execute('$statement');")
-        .join('\n');
-    final createViewStatements = database.views
-        .map((view) => view.getCreateViewStatement())
-        .map((statement) => "await database.execute('''$statement''');")
+        .map((statement) => "'$statement',")
         .join('\n');
 
+    final createViewStatements = database.views
+        .map((view) => view.getCreateViewStatement())
+        .map((statement) => "'''$statement''',")
+        .join('\n');
+
+    return [
+      Field((builder) => builder
+        ..type = refer('final List<String>')
+        ..name = '_createTableStatements'
+        ..assignment = Code('[$createTableStatements]')),
+      Field((builder) => builder
+        ..type = refer('final List<String>')
+        ..name = '_createIndexStatements'
+        ..assignment = Code('[$createIndexStatements]')),
+      Field((builder) => builder
+        ..type = refer('final List<String>')
+        ..name = '_createViewStatements'
+        ..assignment = Code('[$createViewStatements]'))
+    ];
+  }
+
+  @nonNull
+  Method _generateOpenMethod(final Database database) {
     final pathParameter = Parameter((builder) => builder
       ..name = 'path'
       ..type = refer('String'));
@@ -116,13 +150,15 @@ class DatabaseWriter implements Writer {
             },
             onUpgrade: (database, startVersion, endVersion) async {
               await MigrationAdapter.runMigrations(database, startVersion, endVersion, migrations);
-
+              
+              await AutoMigration.migrate(database, _createTableStatements);
+              
               await callback?.onUpgrade?.call(database, startVersion, endVersion);
             },
             onCreate: (database, version) async {
-              $createTableStatements
-              $createIndexStatements
-              $createViewStatements
+              Future.wait(_createTableStatements.map((statement) async => await database.execute(statement)));
+              Future.wait(_createIndexStatements.map((statement) async => await database.execute(statement)));
+              Future.wait(_createViewStatements.map((statement) async => await database.execute(statement)));
 
               await callback?.onCreate?.call(database, version);
             },

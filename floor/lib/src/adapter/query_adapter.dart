@@ -19,9 +19,12 @@ class QueryAdapter {
   Future<T> query<T>(
     final String sql, {
     final List<dynamic> arguments,
+    final bool isRaw = false,
     @required final T Function(Map<String, dynamic>) mapper,
   }) async {
-    final rows = await _database.rawQuery(sql, arguments);
+    final rows = await (isRaw
+        ? _database.rawQuery(sql.replaceAll('?', arguments[0]))
+        : _database.rawQuery(sql, arguments));
 
     if (rows.isEmpty) {
       return null;
@@ -36,20 +39,26 @@ class QueryAdapter {
   Future<List<T>> queryList<T>(
     final String sql, {
     final List<dynamic> arguments,
+    final bool isRaw = false,
     @required final T Function(Map<String, dynamic>) mapper,
   }) async {
-    final rows = await _database.rawQuery(sql, arguments);
+    final rows = await (isRaw
+        ? _database.rawQuery(sql.replaceAll('?', arguments[0]))
+        : _database.rawQuery(sql, arguments));
     return rows.map((row) => mapper(row)).toList();
   }
 
   Future<void> queryNoReturn(
     final String sql, {
     final List<dynamic> arguments,
+    final bool isRaw = false,
   }) async {
     // TODO #94 differentiate between different query kinds (select, update, delete, insert)
     //  this enables to notify the observers
     //  also requires extracting the table name :(
-    await _database.rawQuery(sql, arguments);
+    await (isRaw
+        ? _database.rawQuery(sql.replaceAll('?', arguments[0]))
+        : _database.rawQuery(sql, arguments));
   }
 
   /// Executes a SQLite query that returns a stream of single query results.

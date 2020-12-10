@@ -40,6 +40,7 @@ class QueryMethodProcessor extends Processor<QueryMethod> {
     final rawReturnType = _methodElement.returnType;
 
     final query = _getQuery();
+    final isRaw = _getIsRaw();
     final returnsStream = rawReturnType.isStream;
 
     _assertReturnsFutureOrStream(rawReturnType, returnsStream);
@@ -79,6 +80,7 @@ class QueryMethodProcessor extends Processor<QueryMethod> {
       parameters,
       queryable,
       allTypeConverters,
+      isRaw: isRaw,
     );
   }
 
@@ -97,6 +99,16 @@ class QueryMethodProcessor extends Processor<QueryMethod> {
     final substitutedQuery = query.replaceAll(RegExp(r':[.\w]+'), '?');
     _assertQueryParameters(substitutedQuery, _methodElement.parameters);
     return _replaceInClauseArguments(substitutedQuery);
+  }
+
+  @nonNull
+  bool _getIsRaw() {
+    final isRaw = _methodElement
+      .getAnnotation(annotations.Query)
+      .getField(AnnotationField.isRaw)
+      ?.toBoolValue();
+
+      return isRaw ?? false;
   }
 
   @nonNull
