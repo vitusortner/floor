@@ -59,6 +59,11 @@ class Entity extends Queryable {
     }
   }
 
+  @nonNull
+  String getDropTableStatement() {
+    return 'DROP TABLE IF EXISTS `$name`';
+  }
+
   @nullable
   String _createPrimaryKeyDefinition() {
     if (primaryKey.autoGenerateId) {

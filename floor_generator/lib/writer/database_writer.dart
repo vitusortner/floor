@@ -115,9 +115,7 @@ class DatabaseWriter implements Writer {
               await callback?.onOpen?.call(database);
             },
             onUpgrade: (database, startVersion, endVersion) async {
-              await MigrationAdapter.runMigrations(database, startVersion, endVersion, migrations);
-
-              await callback?.onUpgrade?.call(database, startVersion, endVersion);
+              ${_getOnUpgradeString(database, createTableStatements, createIndexStatements, createViewStatements)}
             },
             onCreate: (database, version) async {
               $createTableStatements
@@ -129,6 +127,38 @@ class DatabaseWriter implements Writer {
           );
           return sqfliteDatabaseFactory.openDatabase(path, options: databaseOptions);
           '''));
+  }
+
+  @nonNull
+  String _getOnUpgradeString(Database database, String createTable,
+      String createIndex, String createView) {
+    if (database.fallbackToDestructiveMigration) {
+      final dropTableStatements =
+          _generateDropTableSqlStatements(database.entities)
+              .map((statement) => "await database.execute('$statement');")
+              .join('\n');
+
+      return '''
+              $dropTableStatements
+              
+              $createTable
+              $createIndex
+              $createView
+              
+              await callback?.onCreate?.call(database, endVersion);
+          ''';
+    } else {
+      return '''
+            await MigrationAdapter.runMigrations(database, startVersion, endVersion, migrations);
+
+            await callback?.onUpgrade?.call(database, startVersion, endVersion);
+          ''';
+    }
+  }
+
+  @nonNull
+  List<String> _generateDropTableSqlStatements(final List<Entity> entities) {
+    return entities.map((entity) => entity.getDropTableStatement()).toList();
   }
 
   @nonNull

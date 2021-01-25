@@ -5,6 +5,8 @@ abstract class AnnotationField {
 
   static const databaseVersion = 'version';
   static const databaseEntities = 'entities';
+  static const fallbackToDestructiveMigration =
+      'fallbackToDestructiveMigration';
   static const databaseViews = 'views';
 
   static const columnInfoName = 'name';

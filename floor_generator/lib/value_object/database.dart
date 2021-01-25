@@ -16,6 +16,7 @@ class Database {
   final int version;
   final Set<TypeConverter> databaseTypeConverters;
   final Set<TypeConverter> allTypeConverters;
+  final bool fallbackToDestructiveMigration;
   final bool hasViewStreams;
   final Set<Entity> streamEntities;
 
@@ -27,6 +28,7 @@ class Database {
     this.daoGetters,
     this.version,
     this.databaseTypeConverters,
+    this.fallbackToDestructiveMigration,
     this.allTypeConverters,
   )   : streamEntities =
             daoGetters.expand((dg) => dg.dao.streamEntities).toSet(),
@@ -43,6 +45,8 @@ class Database {
           views.equals(other.views) &&
           daoGetters.equals(other.daoGetters) &&
           version == other.version &&
+          fallbackToDestructiveMigration ==
+              other.fallbackToDestructiveMigration &&
           databaseTypeConverters.equals(other.databaseTypeConverters) &&
           allTypeConverters.equals(other.allTypeConverters) &&
           streamEntities.equals(other.streamEntities) &&
@@ -56,6 +60,7 @@ class Database {
       views.hashCode ^
       daoGetters.hashCode ^
       version.hashCode ^
+      fallbackToDestructiveMigration.hashCode ^
       databaseTypeConverters.hashCode ^
       allTypeConverters.hashCode ^
       streamEntities.hashCode ^
@@ -63,6 +68,6 @@ class Database {
 
   @override
   String toString() {
-    return 'Database{classElement: $classElement, name: $name, entities: $entities, views: $views, daoGetters: $daoGetters, version: $version, databaseTypeConverters: $databaseTypeConverters, allTypeConverters: $allTypeConverters, streamEntities: $streamEntities, hasViewStreams: $hasViewStreams}';
+    return 'Database{classElement: $classElement, name: $name, entities: $entities, views: $views, daoGetters: $daoGetters, version: $version,isFallBackToDestruction: $fallbackToDestructiveMigration,databaseTypeConverters: $databaseTypeConverters, allTypeConverters: $allTypeConverters, streamEntities: $streamEntities, hasViewStreams: $hasViewStreams}';
   }
 }

@@ -47,6 +47,7 @@ class DatabaseProcessor extends Processor<Database> {
       daoGetters,
       [...entities, ...views],
     );
+    final bool isFallToDestruction = _getFallBackToDestruction();
 
     return Database(
       _classElement,
@@ -56,6 +57,7 @@ class DatabaseProcessor extends Processor<Database> {
       daoGetters,
       version,
       databaseTypeConverters,
+      isFallToDestruction,
       allTypeConverters,
     );
   }
@@ -71,6 +73,16 @@ class DatabaseProcessor extends Processor<Database> {
     if (version < 1) throw _processorError.versionIsBelowOne;
 
     return version;
+  }
+
+  @nonNull
+  bool _getFallBackToDestruction() {
+    final isDestructive = _classElement
+        .getAnnotation(annotations.Database)
+        .getField(AnnotationField.fallbackToDestructiveMigration)
+        ?.toBoolValue();
+
+    return isDestructive;
   }
 
   @nonNull
