@@ -6,6 +6,9 @@ on:
       - develop
   pull_request:
 
+env:
+  FLUTTER_CHANNEL: stable
+
 jobs:
   floor-annotation:
     runs-on: ubuntu-latest
@@ -70,16 +73,36 @@ jobs:
     strategy:
       matrix:
         os: [ macos-latest, windows-latest, ubuntu-latest ]
+        include:
+          - os: ubuntu-latest
+            flutter-path: /opt/hostedtoolcache/flutter
+          - os: macos-latest
+            flutter-path: /Users/runner/hostedtoolcache/flutter
+          - os: windows-latest
+            flutter-path: C:\hostedtoolcache\windows\flutter
     timeout-minutes: 10
 
     steps:
       - name: Check out code
         uses: actions/checkout@v2
 
+      - name: Cache Flutter
+        uses: actions/cache@v2
+        with:
+          path: ${{ matrix.flutter-path }}
+          key: ${{ runner.os }}-flutter-${{ env.FLUTTER_CHANNEL }}
+
       - name: Install Flutter
         uses: subosito/flutter-action@v1
         with:
-          channel: stable
+          channel: ${{ env.FLUTTER_CHANNEL}}
+
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.FLUTTER_HOME }}/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: ${{ runner.os }}-pub-
 
       - name: Install dependencies
         run: flutter packages get
@@ -110,6 +133,67 @@ jobs:
           flags: floor
           file: ./floor/coverage/lcov.info
 
+  floor-test:
+    runs-on: macos-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Cache Flutter
+        uses: actions/cache@v2
+        with:
+          path: /Users/runner/hostedtoolcache/flutter
+          key: ${{ runner.os }}-flutter-${{ env.FLUTTER_CHANNEL }}
+
+      - name: Install Flutter
+        uses: subosito/flutter-action@v1
+        with:
+          channel: ${{ env.FLUTTER_CHANNEL}}
+
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.FLUTTER_HOME }}/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: ${{ runner.os }}-pub-
+
+      - name: Install dependencies
+        run: flutter packages get
+        working-directory: floor_test
+
+      - name: Analyze
+        run: flutter analyze
+        working-directory: floor_test
+
+      - name: Start iOS simulator
+        run: xcrun simctl boot "iPhone 12"
+
+      - name: Cache Xcode Derived Data
+        uses: actions/cache@v2
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-derived-data
+
+#      - name: Cache Flutter Framework
+#        uses: actions/cache@v2
+#        with:
+#          path: floor_test/ios/Flutter
+#          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+#          restore-keys: ${{ runner.os }}-pods-
+#
+#      - name: Cache Pods
+#        uses: actions/cache@v2
+#        with:
+#          path: floor_test/ios/Pods
+#          key: ${{ runner.os }}-pods-${{ hashFiles('floor_test/ios/Podfile.lock') }}
+#          restore-keys: ${{ runner.os }}-pods-
+
+      - name: Run integration tests
+        working-directory: floor_test
+        run: flutter drive --driver=test_driver/integration_test.dart --target=integration_test/main_test.dart
+
   example:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -118,10 +202,16 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v2
 
+      - name: Cache Flutter
+        uses: actions/cache@v2
+        with:
+          path: /opt/hostedtoolcache/flutter
+          key: ${{ runner.os }}-flutter-${{ env.FLUTTER_CHANNEL }}
+
       - name: Install Flutter
         uses: subosito/flutter-action@v1
         with:
-          channel: stable
+          channel: ${{ env.FLUTTER_CHANNEL}}
 
       - name: Install dependencies
         run: flutter packages get
