@@ -80,6 +80,22 @@ abstract class PersonDao {
   }
 
   @transaction
+  Future<void> fillDatabase(String prefix) async {
+    await deleteAllPersons();
+    for (var i in [0, 1, 2, 3]) {
+      await insertPerson(Person(i, '$prefix P$i'));
+    }
+  }
+
+  @transaction
+  Future<void> failingTransaction() async {
+    await insertPerson(Person(1, 'Name'));
+    await insertPerson(Person(2, 'Name2'));
+    //the following should fail (id is not unique)
+    await insertPersons([Person(1, 'Name')]);
+  }
+
+  @transaction
   Future<List<Person>> replacePersonsAndReturn(List<Person> persons) async {
     await replacePersons(persons);
     return findAllPersons();

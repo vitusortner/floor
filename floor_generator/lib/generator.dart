@@ -4,6 +4,7 @@ import 'package:analyzer/dart/element/element.dart';
 import 'package:build/build.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:floor_annotation/floor_annotation.dart' as annotations;
+import 'package:floor_generator/misc/foreign_key_map.dart';
 import 'package:floor_generator/misc/extension/iterable_extension.dart';
 import 'package:floor_generator/processor/database_processor.dart';
 import 'package:floor_generator/value_object/database.dart';
@@ -25,12 +26,14 @@ class FloorGenerator extends GeneratorForAnnotation<annotations.Database> {
     final database = _getDatabase(element);
 
     final databaseClass = DatabaseWriter(database).write();
+    final fkDepMap = ForeignKeyMap.fromEntities(database.entities);
     final daoClasses = database.daoGetters
         .map((daoGetter) => daoGetter.dao)
         .map((dao) => DaoWriter(
               dao,
               database.streamEntities,
               database.hasViewStreams,
+              fkDepMap,
             ).write());
     final distinctTypeConverterFields = database.allTypeConverters
         .distinctBy((element) => element.name)

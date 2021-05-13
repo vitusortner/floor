@@ -10,21 +10,21 @@ class UpdateAdapter<T> {
   final String _entityName;
   final List<String> _primaryKeyColumnName;
   final Map<String, Object?> Function(T) _valueMapper;
-  final StreamController<String>? _changeListener;
+  final void Function() _changeHandler;
 
   UpdateAdapter(
     final DatabaseExecutor database,
     final String entityName,
     final List<String> primaryKeyColumnName,
     final Map<String, Object?> Function(T) valueMapper, [
-    final StreamController<String>? changeListener,
+    final void Function()? changeHandler,
   ])  : assert(entityName.isNotEmpty),
         assert(primaryKeyColumnName.isNotEmpty),
         _database = database,
         _entityName = entityName,
         _valueMapper = valueMapper,
         _primaryKeyColumnName = primaryKeyColumnName,
-        _changeListener = changeListener;
+        _changeHandler = changeHandler ?? (() {/* do nothing */});
 
   Future<void> update(
     final T item,
@@ -72,7 +72,7 @@ class UpdateAdapter<T> {
       ),
       conflictAlgorithm: onConflictStrategy.asSqfliteConflictAlgorithm(),
     );
-    if (result != 0) _changeListener?.add(_entityName);
+    if (result != 0) _changeHandler();
     return result;
   }
 
@@ -96,7 +96,7 @@ class UpdateAdapter<T> {
       );
     }
     final result = (await batch.commit(noResult: false)).cast<int>();
-    if (result.isNotEmpty) _changeListener?.add(_entityName);
+    if (result.isNotEmpty) _changeHandler();
     return result.isNotEmpty
         ? result.reduce((sum, element) => sum + element)
         : 0;

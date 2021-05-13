@@ -137,14 +137,20 @@ void main() {
           actual,
           emitsInOrder(<List<Dog>>[
             [], // initial state,
+            [], // after inserting person1, [1]
+            [], // after inserting person2, [1]
             [dog1], // after inserting dog1
             [dog1], // after inserting dog2
-            //[], // after removing person1. Does not work because
-            // ForeignKey-relations are not considered yet (#321)
+            [], // after removing person1, which triggers cascade remove
           ]));
+      // [1] due to insert method having onConflict:replace, dog entries could be affected by this query, so a stream event is triggered.
 
       await personDao.insertPerson(person1);
+      // avoid that delete happens before the re-execution of
+      // the select query for the stream
+      await Future<void>.delayed(const Duration(milliseconds: 100));
       await personDao.insertPerson(person2);
+      await Future<void>.delayed(const Duration(milliseconds: 100));
 
       await database.dogDao.insertDog(dog1);
 
@@ -155,6 +161,53 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
       await database.personDao.deletePerson(person1);
+    });
+    group('transaction triggers', () {
+      test('transaction should only trigger once per completed transaction',
+          () async {
+        final actual = personDao.findAllPersonsAsStream();
+        expect(
+            actual,
+            emitsInOrder(<dynamic>[
+              <Person>[], // initial state,
+              [
+                Person(0, ' P0'),
+                Person(1, ' P1'),
+                Person(2, ' P2'),
+                Person(3, ' P3'),
+              ], // after first fill
+              [
+                Person(0, 'x P0'),
+                Person(1, 'x P1'),
+                Person(2, 'x P2'),
+                Person(3, 'x P3'),
+              ], // after second fill,
+              emitsDone
+            ]));
+
+        await personDao.fillDatabase('');
+        await personDao.fillDatabase('x');
+        // avoid that closing happens before the re-execution of
+        // the select query for the stream
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        await database.close();
+      });
+      test('failing transaction should not trigger stream', () async {
+        final actual = personDao.findAllPersonsAsStream();
+        expect(
+            actual,
+            emitsInOrder(<dynamic>[
+              <Person>[], // initial state,
+              emitsDone // do no emit anything else, since statements within
+              // transaction should not trigger new stream events
+            ]));
+        try {
+          await personDao.failingTransaction();
+        } catch (_) {}
+        // close database to avoid deadlock (expect emitsDone waits for closing of Database
+        // and database will be closed in tearDown after expect finishes
+        await database.close();
+      });
     });
   });
 }

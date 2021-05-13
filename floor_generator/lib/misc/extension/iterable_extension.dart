@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'string_extension.dart';
 
 extension IterableExtension<T> on Iterable<T> {
   Iterable<T> sortedByDescending(Comparable Function(T element) selector) {
@@ -22,5 +23,15 @@ extension IterableExtension<T> on Iterable<T> {
     for (final current in this) {
       if (existing.add(selector(current))) yield current;
     }
+  }
+}
+
+extension StringIterableExtension on Iterable<String> {
+  String toSetLiteral({bool withConst = true}) {
+    final content = distinctBy((element) => element)
+        .map<String>((e) => e.toLiteral())
+        .join(', ');
+    final cnst = withConst ? 'const ' : '';
+    return '$cnst{$content}';
   }
 }

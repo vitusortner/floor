@@ -7,8 +7,10 @@ import 'package:sqflite/sqflite.dart' as sqflite;
 abstract class FloorDatabase {
   /// [StreamController] that is responsible for notifying listeners about changes
   /// in specific tables. It acts as an event bus.
+  /// An event contains all changed tables, including those that were changed by
+  /// foreign-key constraints.
   @protected
-  late final StreamController<String> changeListener;
+  late final StreamController<Set<String>> changeListener;
 
   /// Use this whenever you need direct access to the sqflite database.
   late final sqflite.DatabaseExecutor database;

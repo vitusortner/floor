@@ -143,13 +143,13 @@ void main() {
 
   group('stream queries', () {
     // ignore: close_sinks
-    StreamController<String>? streamController;
+    StreamController<Set<String>>? streamController;
     const entityName = 'person';
 
     late QueryAdapter underTest;
 
     setUp(() {
-      streamController = StreamController<String>();
+      streamController = StreamController<Set<String>>();
       underTest = QueryAdapter(mockDatabaseExecutor, streamController);
     });
 
@@ -200,7 +200,7 @@ void main() {
 
       final actual = underTest.queryStream(sql,
           queryableName: entityName, isView: false, mapper: mapper);
-      streamController!.add(entityName);
+      streamController!.add({entityName});
 
       expect(actual, emitsInOrder(<Person>[person, person]));
     });
@@ -263,7 +263,7 @@ void main() {
 
       final actual = underTest.queryListStream(sql,
           queryableName: entityName, isView: false, mapper: mapper);
-      streamController!.add(entityName);
+      streamController!.add({entityName});
 
       expect(
         actual,
@@ -295,8 +295,8 @@ void main() {
         ]),
       );
 
-      streamController!.add(entityName);
-      streamController!.add('otherEntity');
+      streamController!.add({entityName});
+      streamController!.add({'otherEntity'});
     });
   });
 }

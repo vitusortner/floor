@@ -15,4 +15,16 @@ extension ForeignKeyActionExtension on ForeignKeyAction {
         return 'CASCADE';
     }
   }
+
+  bool changesChildren() {
+    switch (this) {
+      case ForeignKeyAction.noAction:
+      case ForeignKeyAction.restrict:
+        return false;
+      case ForeignKeyAction.setNull:
+      case ForeignKeyAction.setDefault:
+      case ForeignKeyAction.cascade:
+        return true;
+    }
+  }
 }

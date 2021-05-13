@@ -8,18 +8,18 @@ class InsertionAdapter<T> {
   final DatabaseExecutor _database;
   final String _entityName;
   final Map<String, Object?> Function(T) _valueMapper;
-  final StreamController<String>? _changeListener;
+  final void Function(bool) _changeHandler;
 
   InsertionAdapter(
     final DatabaseExecutor database,
     final String entityName,
     final Map<String, Object?> Function(T) valueMapper, [
-    final StreamController<String>? changeListener,
+    final void Function(bool)? changeHandler,
   ])  : assert(entityName.isNotEmpty),
         _database = database,
         _entityName = entityName,
         _valueMapper = valueMapper,
-        _changeListener = changeListener;
+        _changeHandler = changeHandler ?? ((bool isReplace) {/* do nothing */});
 
   Future<void> insert(
     final T item,
@@ -42,7 +42,7 @@ class InsertionAdapter<T> {
       );
     }
     await batch.commit(noResult: true);
-    _changeListener?.add(_entityName);
+    _changeHandler(onConflictStrategy == OnConflictStrategy.replace);
   }
 
   Future<int> insertAndReturnId(
@@ -66,7 +66,8 @@ class InsertionAdapter<T> {
       );
     }
     final result = (await batch.commit(noResult: false)).cast<int>();
-    if (result.isNotEmpty) _changeListener?.add(_entityName);
+    if (result.isNotEmpty)
+      _changeHandler(onConflictStrategy == OnConflictStrategy.replace);
     return result;
   }
 
@@ -79,7 +80,8 @@ class InsertionAdapter<T> {
       _valueMapper(item),
       conflictAlgorithm: onConflictStrategy.asSqfliteConflictAlgorithm(),
     );
-    if (result != 0) _changeListener?.add(_entityName);
+    if (result != 0)
+      _changeHandler(onConflictStrategy == OnConflictStrategy.replace);
     return result;
   }
 }

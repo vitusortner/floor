@@ -5,11 +5,11 @@ import 'package:sqflite/sqflite.dart';
 /// This class knows how to execute database queries.
 class QueryAdapter {
   final DatabaseExecutor _database;
-  final StreamController<String>? _changeListener;
+  final StreamController<Set<String>>? _changeListener;
 
   QueryAdapter(
     final DatabaseExecutor database, [
-    final StreamController<String>? changeListener,
+    final StreamController<Set<String>>? changeListener,
   ])  : _database = database,
         _changeListener = changeListener;
 
@@ -73,7 +73,8 @@ class QueryAdapter {
     // listen on all updates if the stream is on a view, only listen to the
     // name of the table if the stream is on a entity.
     final subscription = changeListener.stream
-        .where((updatedTable) => updatedTable == queryableName || isView)
+        .where(
+            (updatedTables) => isView || updatedTables.contains(queryableName))
         .listen(
           (_) async => executeQueryAndNotifyController(),
           onDone: () => controller.close(),
@@ -105,7 +106,8 @@ class QueryAdapter {
 
     // Views listen on all events, Entities only on events that changed the same entity.
     final subscription = changeListener.stream
-        .where((updatedTable) => isView || updatedTable == queryableName)
+        .where(
+            (updatedTables) => isView || updatedTables.contains(queryableName))
         .listen(
           (_) async => executeQueryAndNotifyController(),
           onDone: () => controller.close(),

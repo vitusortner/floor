@@ -32,11 +32,11 @@ class DatabaseWriter implements Writer {
     return Constructor((builder) {
       final parameter = Parameter((builder) => builder
         ..name = 'listener'
-        ..type = refer('StreamController<String>?'));
+        ..type = refer('StreamController<Set<String>>?'));
 
       builder
         ..body = const Code(
-          'changeListener = listener ?? StreamController<String>.broadcast();',
+          'changeListener = listener ?? StreamController<Set<String>>.broadcast();',
         )
         ..optionalParameters.add(parameter);
     });

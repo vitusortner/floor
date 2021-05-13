@@ -29,4 +29,25 @@ void main() {
       expect(actual, equals('CASCADE'));
     });
   });
+  group('foreign key changesChild', () {
+    test('NO ACTION', () {
+      expect(annotations.ForeignKeyAction.noAction.changesChildren(), isFalse);
+    });
+
+    test('RESTRICT', () {
+      expect(annotations.ForeignKeyAction.restrict.changesChildren(), isFalse);
+    });
+
+    test('SET NULL', () {
+      expect(annotations.ForeignKeyAction.setNull.changesChildren(), isTrue);
+    });
+
+    test('SET DEFAULT', () {
+      expect(annotations.ForeignKeyAction.setDefault.changesChildren(), isTrue);
+    });
+
+    test('CASCADE', () {
+      expect(annotations.ForeignKeyAction.cascade.changesChildren(), isTrue);
+    });
+  });
 }

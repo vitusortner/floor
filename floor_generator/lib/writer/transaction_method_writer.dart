@@ -35,8 +35,15 @@ class TransactionMethodWriter implements Writer {
       $finalExpression super.$methodCall;
     } else {
       $finalExpression (database as sqflite.Database).transaction<$innerTypeName>((transaction) async {
-        final transactionDatabase = _\$${method.databaseName}(changeListener)..database = transaction;
-        $finalExpression transactionDatabase.${method.daoFieldName}.$methodCall;
+        final innerListener = StreamController<Set<String>>.broadcast();
+        final collector = innerListener.stream.fold<Set<String>>({}, (previous, element) => previous.union(element));
+        
+        final transactionDatabase = _\$${method.databaseName}(innerListener)..database = transaction;
+        ${innerType.isVoid ? '' : 'final result ='} await transactionDatabase.${method.daoFieldName}.$methodCall;
+        
+        await innerListener.close();
+        changeListener.add(await collector);
+        ${innerType.isVoid ? '' : 'return result;'}
       });
     }
     ''';

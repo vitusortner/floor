@@ -8,21 +8,21 @@ class DeletionAdapter<T> {
   final String _entityName;
   final List<String> _primaryKeyColumnNames;
   final Map<String, Object?> Function(T) _valueMapper;
-  final StreamController<String>? _changeListener;
+  final void Function() _changeHandler;
 
   DeletionAdapter(
     final DatabaseExecutor database,
     final String entityName,
     final List<String> primaryKeyColumnName,
     final Map<String, Object?> Function(T) valueMapper, [
-    final StreamController<String>? changeListener,
+    final void Function()? changeHandler,
   ])  : assert(entityName.isNotEmpty),
         assert(primaryKeyColumnName.isNotEmpty),
         _database = database,
         _entityName = entityName,
         _primaryKeyColumnNames = primaryKeyColumnName,
         _valueMapper = valueMapper,
-        _changeListener = changeListener;
+        _changeHandler = changeHandler ?? (() {/* do nothing */});
 
   Future<void> delete(final T item) async {
     await _delete(item);
@@ -51,7 +51,7 @@ class DeletionAdapter<T> {
         _valueMapper(item),
       ),
     );
-    if (result != 0) _changeListener?.add(_entityName);
+    if (result != 0) _changeHandler();
     return result;
   }
 
@@ -68,7 +68,7 @@ class DeletionAdapter<T> {
       );
     }
     final result = (await batch.commit(noResult: false)).cast<int>();
-    if (result.isNotEmpty) _changeListener?.add(_entityName);
+    if (result.isNotEmpty) _changeHandler();
     return result.isNotEmpty
         ? result.reduce((sum, element) => sum + element)
         : 0;

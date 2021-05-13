@@ -28,6 +28,31 @@ void main() {
       expect(actual, equals([_Box(1), _Box(0), _Box(2)]));
     });
   });
+
+  group('toSetLiteral', () {
+    test('empty Set from empty set', () {
+      expect(<String>{}.toSetLiteral(), equals('const {}'));
+    });
+
+    test('empty Set from empty list', () {
+      expect(<String>[].toSetLiteral(), equals('const {}'));
+    });
+
+    test('empty Set from empty set without const', () {
+      expect(<String>{}.toSetLiteral(withConst: false), equals('{}'));
+    });
+
+    test('set with elements', () {
+      expect(<String>{'that', 'escaped \'String\''}.toSetLiteral(),
+          equals("const {'that', 'escaped \\\'String\\\''}"));
+    });
+
+    test('list with duplicate elements only shows distinct elements', () {
+      expect(
+          <String>['that', 'escaped \'String\'', 'that', 'that'].toSetLiteral(),
+          equals("const {'that', 'escaped \\\'String\\\''}"));
+    });
+  });
 }
 
 class _Box {
